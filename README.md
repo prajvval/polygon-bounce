@@ -37,7 +37,7 @@ For local development with real credentials:
 - Use Arrow Keys or A/D to rotate the polygon
 - Hit all non-explosive sides to advance levels
 - Avoid red explosive sides
-- Collect lives and score points
+- Collect lives and score points!
 
 ## Game Features
 

@@ -142,79 +142,79 @@ class Game {
 
     playSound(frequency, duration, type = 'sine') {
         const now = this.audioContext.currentTime;
-        
+
         // For soothing bounce sounds
         if (type === 'bounce') {
             // Create multiple soft sine waves for a bell-like sound
             const fundamentalGain = this.audioContext.createGain();
             const overtoneGain = this.audioContext.createGain();
-            
+
             // Fundamental frequency
             const osc1 = this.audioContext.createOscillator();
             osc1.type = 'sine';
             osc1.frequency.setValueAtTime(frequency, now);
-            
+
             // Soft overtone
             const osc2 = this.audioContext.createOscillator();
             osc2.type = 'sine';
             osc2.frequency.setValueAtTime(frequency * 2, now);
-            
+
             // Connect with lower volumes
             osc1.connect(fundamentalGain);
             osc2.connect(overtoneGain);
             fundamentalGain.connect(this.audioContext.destination);
             overtoneGain.connect(this.audioContext.destination);
-            
+
             // Gentle envelope
             fundamentalGain.gain.setValueAtTime(0, now);
             fundamentalGain.gain.linearRampToValueAtTime(0.15, now + 0.01);
             fundamentalGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-            
+
             overtoneGain.gain.setValueAtTime(0, now);
             overtoneGain.gain.linearRampToValueAtTime(0.05, now + 0.01);
             overtoneGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.7);
-            
+
             osc1.start(now);
             osc2.start(now);
             osc1.stop(now + duration);
             osc2.stop(now + duration);
-            
-        // For explosion/loss of life sounds
+
+            // For explosion/loss of life sounds
         } else if (type === 'explosion') {
             // Create a soft "whoosh" sound using filtered noise
             const noiseBuffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
             const noiseData = noiseBuffer.getChannelData(0);
-            
+
             // Fill with white noise
             for (let i = 0; i < noiseData.length; i++) {
                 noiseData[i] = Math.random() * 2 - 1;
             }
-            
+
             const noiseSource = this.audioContext.createBufferSource();
             noiseSource.buffer = noiseBuffer;
-            
+
             // Low-pass filter for soft sound
             const filter = this.audioContext.createBiquadFilter();
             filter.type = 'lowpass';
             filter.frequency.setValueAtTime(frequency, now);
             filter.frequency.exponentialRampToValueAtTime(50, now + duration);
             filter.Q.value = 1;
-            
+
             const gainNode = this.audioContext.createGain();
-            
+
             noiseSource.connect(filter);
             filter.connect(gainNode);
             gainNode.connect(this.audioContext.destination);
-            
+
             // Soft fade in and out
             gainNode.gain.setValueAtTime(0, now);
             gainNode.gain.linearRampToValueAtTime(0.2, now + 0.05);
             gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
-            
+
             noiseSource.start(now);
             noiseSource.stop(now + duration);
-            
-        // Default sine wave for other sounds
+
+            // Default sine wave for other sounds
         } else {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
@@ -236,91 +236,91 @@ class Game {
     startBackgroundMusic() {
         // Reduce overall volume for ambient feel
         this.musicGainNode.gain.value = 0.08;
-        
+
         // Create reverb effect
         const createReverb = () => {
             const convolver = this.audioContext.createConvolver();
             const length = this.audioContext.sampleRate * 2;
             const impulse = this.audioContext.createBuffer(2, length, this.audioContext.sampleRate);
-            
+
             for (let channel = 0; channel < 2; channel++) {
                 const channelData = impulse.getChannelData(channel);
                 for (let i = 0; i < length; i++) {
                     channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
                 }
             }
-            
+
             convolver.buffer = impulse;
             return convolver;
         };
-        
+
         const reverb = createReverb();
         const reverbGain = this.audioContext.createGain();
         reverbGain.gain.value = 0.3;
-        
+
         reverb.connect(reverbGain);
         reverbGain.connect(this.audioContext.destination);
-        
+
         // Play soft piano-like notes with envelope
         const playPianoNote = (frequency, startTime, duration = 2, volume = 0.1) => {
             const osc = this.audioContext.createOscillator();
             const osc2 = this.audioContext.createOscillator(); // Slight detune for warmth
             const env = this.audioContext.createGain();
             const filter = this.audioContext.createBiquadFilter();
-            
+
             // Soft sine waves for piano-like sound
             osc.type = 'sine';
             osc2.type = 'sine';
             osc.frequency.value = frequency;
             osc2.frequency.value = frequency * 1.01; // Slight detune
-            
+
             // Low-pass filter for softer sound
             filter.type = 'lowpass';
             filter.frequency.value = frequency * 3;
             filter.Q.value = 1;
-            
+
             osc.connect(filter);
             osc2.connect(filter);
             filter.connect(env);
             env.connect(this.musicGainNode);
             env.connect(reverb); // Send to reverb
-            
+
             // Gentle envelope
             env.gain.setValueAtTime(0, startTime);
             env.gain.linearRampToValueAtTime(volume, startTime + 0.1);
             env.gain.exponentialRampToValueAtTime(volume * 0.3, startTime + duration * 0.7);
             env.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-            
+
             osc.start(startTime);
             osc2.start(startTime);
             osc.stop(startTime + duration);
             osc2.stop(startTime + duration);
         };
-        
+
         // Play soft bass notes
         const playBassNote = (frequency, startTime, duration = 4) => {
             const osc = this.audioContext.createOscillator();
             const env = this.audioContext.createGain();
             const filter = this.audioContext.createBiquadFilter();
-            
+
             osc.type = 'triangle';
             osc.frequency.value = frequency;
-            
+
             filter.type = 'lowpass';
             filter.frequency.value = 200;
-            
+
             osc.connect(filter);
             filter.connect(env);
             env.connect(this.musicGainNode);
-            
+
             env.gain.setValueAtTime(0, startTime);
             env.gain.linearRampToValueAtTime(0.05, startTime + 0.2);
             env.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-            
+
             osc.start(startTime);
             osc.stop(startTime + duration);
         };
-        
+
         // Relaxing chord progressions - Cmaj7, Am7, Fmaj7, G7
         const chords = [
             [261.63, 329.63, 392.00, 493.88], // Cmaj7
@@ -328,27 +328,27 @@ class Game {
             [174.61, 261.63, 329.63, 440.00], // Fmaj7
             [196.00, 293.66, 392.00, 440.00]  // G7
         ];
-        
+
         const bassNotes = [130.81, 110.00, 87.31, 98.00]; // C, A, F, G
-        
+
         const scheduleMusicLoop = () => {
             const now = this.audioContext.currentTime;
             const barDuration = 4; // 4 seconds per chord
-            
+
             // Play chord progression
             chords.forEach((chord, chordIndex) => {
                 const chordStartTime = now + chordIndex * barDuration;
-                
+
                 // Play bass note
                 playBassNote(bassNotes[chordIndex], chordStartTime, barDuration);
-                
+
                 // Play chord notes with slight timing variations for human feel
                 chord.forEach((note, noteIndex) => {
                     const noteTime = chordStartTime + (Math.random() * 0.05); // Slight human timing
                     const velocity = 0.05 + Math.random() * 0.03; // Varying velocity
                     playPianoNote(note, noteTime, 3, velocity);
                 });
-                
+
                 // Add some melodic notes
                 if (Math.random() > 0.5) {
                     const melodyNote = chord[Math.floor(Math.random() * chord.length)] * 2;
@@ -356,11 +356,11 @@ class Game {
                     playPianoNote(melodyNote, melodyTime, 1.5, 0.04);
                 }
             });
-            
+
             // Loop after all chords play
             setTimeout(scheduleMusicLoop, barDuration * chords.length * 1000);
         };
-        
+
         // Start with a slight delay for smoothness
         setTimeout(scheduleMusicLoop, 100);
     }
@@ -369,7 +369,7 @@ class Game {
         // Move next explosive sides to current explosive sides
         this.explosiveSides = new Set(this.nextExplosiveSides);
         this.nextExplosiveSides.clear();
-        
+
         // Calculate new next explosive sides
         const numExplosive = Math.ceil(this.polygonSides * 0.25);
         const availableSides = [];
@@ -386,7 +386,7 @@ class Game {
                 availableSides.splice(randomIndex, 1);
             }
         }
-        
+
         // On first call, immediately set explosive sides
         if (this.explosiveSides.size === 0) {
             this.explosiveSides = new Set(this.nextExplosiveSides);
@@ -443,10 +443,10 @@ class Game {
         const edgeLength = Math.sqrt(edge.x * edge.x + edge.y * edge.y);
         edge.x /= edgeLength;
         edge.y /= edgeLength;
-        
+
         const toPoint = { x: point.x - v1.x, y: point.y - v1.y };
         const projLength = toPoint.x * edge.x + toPoint.y * edge.y;
-        
+
         return {
             edge,
             edgeLength,
@@ -462,32 +462,32 @@ class Game {
         for (let i = 0, j = this.polygonSides - 1; i < this.polygonSides; j = i++) {
             const xi = vertices[i].x, yi = vertices[i].y;
             const xj = vertices[j].x, yj = vertices[j].y;
-            
+
             const intersect = ((yi > this.ball.y) != (yj > this.ball.y))
                 && (this.ball.x < (xj - xi) * (this.ball.y - yi) / (yj - yi) + xi);
             if (intersect) inside = !inside;
         }
-        
+
         // If ball is outside polygon, push it back inside
         if (!inside) {
             // Find the closest edge and push ball inside
             let minDist = Infinity;
             let closestPoint = null;
             let closestNormal = null;
-            
+
             for (let i = 0; i < this.polygonSides; i++) {
                 const v1 = vertices[i];
                 const v2 = vertices[(i + 1) % this.polygonSides];
-                
+
                 const { edge, edgeLength, projLength, projPoint } = this.calculateEdgeProjection(v1, v2, this.ball);
                 const clampedProjLength = Math.max(0, Math.min(edgeLength, projLength));
                 const clampedProjPoint = { x: v1.x + edge.x * clampedProjLength, y: v1.y + edge.y * clampedProjLength };
-                
+
                 const dist = Math.sqrt(
                     (this.ball.x - clampedProjPoint.x) ** 2 +
                     (this.ball.y - clampedProjPoint.y) ** 2
                 );
-                
+
                 if (dist < minDist) {
                     minDist = dist;
                     closestPoint = clampedProjPoint;
@@ -501,12 +501,12 @@ class Game {
                     closestNormal = normal;
                 }
             }
-            
+
             if (closestPoint && closestNormal) {
                 // Push ball back inside by a safe margin
                 this.ball.x = closestPoint.x - closestNormal.x * (BALL_RADIUS + 5);
                 this.ball.y = closestPoint.y - closestNormal.y * (BALL_RADIUS + 5);
-                
+
                 // Reflect velocity
                 const dotProduct = this.ball.vx * closestNormal.x + this.ball.vy * closestNormal.y;
                 if (dotProduct > 0) {
@@ -649,7 +649,7 @@ class Game {
     nextLevel() {
         if (this.level < 20) {
             this.level++;
-                this.polygonSides += 1;
+            this.polygonSides += 1;
             this.graySides.clear();
             this.lives++;
             this.maxLives++;
@@ -808,7 +808,7 @@ class Game {
                 const midY = (v1.y + v2.y) / 2;
                 this.particles.push(new Particle(midX, midY, colors.explosive));
             }
-            
+
             // Add warning particles for sides about to become explosive
             if (this.nextExplosiveSides.has(i) && this.explosiveTimer >= this.warningStartTime && Math.random() < 0.2) {
                 const midX = (v1.x + v2.x) / 2;
@@ -890,13 +890,14 @@ const JSONBIN_BASE_URL = 'https://api.jsonbin.io/v3';
 
 // Helper function to check if JSONBin is configured
 function isJSONBinConfigured() {
-    return JSONBIN_BIN_ID && JSONBIN_BIN_ID !== 'YOUR_BIN_ID_HERE' &&
-           JSONBIN_API_KEY && JSONBIN_API_KEY !== 'YOUR_API_KEY_HERE';
+    return true;
+    //return JSONBIN_BIN_ID && JSONBIN_BIN_ID !== 'YOUR_BIN_ID_HERE' &&
+    //       JSONBIN_API_KEY && JSONBIN_API_KEY !== 'YOUR_API_KEY_HERE';
 }
 
 async function startGame() {
     const username = document.getElementById('username').value.trim();
-    
+
     // Allow empty names but mark as anonymous
     if (!username) {
         playerName = '';
@@ -904,7 +905,7 @@ async function startGame() {
     } else {
         playerName = username.toUpperCase();
     }
-    
+
     document.getElementById('splashScreen').style.display = 'none';
     game = new Game();
     game.playerName = playerName;
@@ -1398,7 +1399,7 @@ class SpaceBackground {
             starLayer.layer.forEach(star => {
                 // Move star towards viewer
                 star.z -= speed * starLayer.speed;
-                
+
                 // Reset star if it passes the viewer
                 if (star.z <= 0) {
                     star.x = (Math.random() - 0.5) * this.canvas.width * 3;
@@ -1413,7 +1414,7 @@ class SpaceBackground {
         this.planets.forEach(planet => {
             // Move planet towards viewer
             planet.z -= speed * 0.5;
-            
+
             // Reset planet if it passes the viewer
             if (planet.z <= 50) {
                 planet.x = (Math.random() - 0.5) * this.canvas.width * 2;
@@ -1428,7 +1429,7 @@ class SpaceBackground {
             // Move galaxy towards viewer
             galaxy.z -= speed * 0.3;
             galaxy.rotation += 0.002;
-            
+
             // Reset galaxy if it passes the viewer
             if (galaxy.z <= 100) {
                 galaxy.x = (Math.random() - 0.5) * this.canvas.width * 2;
@@ -1514,14 +1515,14 @@ class SpaceBackground {
                 const scale = focalLength / (focalLength + star.z);
                 const x2d = centerX + star.x * scale;
                 const y2d = centerY + star.y * scale;
-                
+
                 // Skip if outside viewport
-                if (x2d < -10 || x2d > this.canvas.width + 10 || 
+                if (x2d < -10 || x2d > this.canvas.width + 10 ||
                     y2d < -10 || y2d > this.canvas.height + 10) return;
-                
+
                 const size = Math.max(1, Math.floor(this.stars[item.layerIndex].size * scale * 2));
                 const brightness = (0.3 + star.brightness * 0.7) * (1 - star.z / 1000);
-                
+
                 this.ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
                 this.ctx.fillRect(
                     Math.floor(x2d),
@@ -1535,11 +1536,11 @@ class SpaceBackground {
                 const x2d = centerX + planet.x * scale;
                 const y2d = centerY + planet.y * scale;
                 const radius = planet.baseRadius * scale;
-                
+
                 // Skip if too small or outside viewport
-                if (radius < 1 || x2d < -radius || x2d > this.canvas.width + radius || 
+                if (radius < 1 || x2d < -radius || x2d > this.canvas.width + radius ||
                     y2d < -radius || y2d > this.canvas.height + radius) return;
-                
+
                 // Create temporary planet object for drawing
                 const drawPlanet = {
                     x: x2d,
@@ -1555,11 +1556,11 @@ class SpaceBackground {
                 const scale = focalLength / (focalLength + galaxy.z);
                 const x2d = centerX + galaxy.x * scale;
                 const y2d = centerY + galaxy.y * scale;
-                
+
                 // Skip if outside viewport
-                if (x2d < -100 || x2d > this.canvas.width + 100 || 
+                if (x2d < -100 || x2d > this.canvas.width + 100 ||
                     y2d < -100 || y2d > this.canvas.height + 100) return;
-                
+
                 this.drawGalaxy(x2d, y2d, galaxy.baseScale * scale, galaxy.rotation);
             }
         });
@@ -1569,8 +1570,8 @@ class SpaceBackground {
             const scale = focalLength / (focalLength + this.giraffe.z);
             const x2d = centerX + this.giraffe.x * scale;
             const y2d = centerY + this.giraffe.y * scale;
-            
-            if (x2d > -200 && x2d < this.canvas.width + 200 && 
+
+            if (x2d > -200 && x2d < this.canvas.width + 200 &&
                 y2d > -200 && y2d < this.canvas.height + 200) {
                 this.giraffe.scale = scale;
                 const tempX = this.giraffe.x;

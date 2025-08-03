@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polygon Ball Bounce</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        #gameContainer {
+            position: relative;
+            text-align: center;
+        }
+
+        #gameCanvas {
+            border: 4px solid #333;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        #gameInfo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 12px;
+            line-height: 20px;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 10px 20px;
+            border: 2px solid #fff;
+            font-size: 10px;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        #leaderboard {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #fff;
+            color: white;
+            padding: 20px;
+            display: none;
+            z-index: 999;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #leaderboard h2 {
+            color: #00ffff;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0px #ff00ff;
+        }
+
+        #leaderboard table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        #leaderboard th {
+            color: #ffff00;
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid #fff;
+        }
+
+        #leaderboard td {
+            padding: 8px;
+            border-bottom: 1px solid #444;
+        }
+
+        #leaderboard .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff0000;
+            border: 2px solid #fff;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            text-shadow: 3px 3px 0px #000;
+            display: none;
+            text-align: center;
+        }
+
+        #gameOver button {
+            font-family: 'Press Start 2P', cursive;
+            background: #4CAF50;
+            border: 2px solid #fff;
+            color: white;
+            padding: 10px 20px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 20px;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        #gameOver button:hover {
+            background: #45a049;
+        }
+
+        .life {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin: 0 4px;
+            font-size: 16px;
+        }
+
+        #splashScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #splashScreen h1 {
+            color: #00ffff;
+            font-size: 48px;
+            margin-bottom: 40px;
+            text-shadow: 4px 4px 0px #ff00ff;
+            animation: pulse 1s infinite alternate;
+        }
+
+        #splashScreen p {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        #splashScreen button {
+            font-family: 'Press Start 2P', cursive;
+            background: #ff00ff;
+            border: 3px solid #fff;
+            color: white;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            text-shadow: 2px 2px 0px #000;
+            animation: blink 1s infinite;
+        }
+
+        #splashScreen button:hover {
+            background: #ff44ff;
+        }
+
+        @keyframes pulse {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0.8;
+            }
+        }
+
+        #backgroundCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="backgroundCanvas"></canvas>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="800"></canvas>
+        <div id="gameInfo">
+            <div>Player: <span id="playerName"></span></div>
+            <div>Level: <span id="level">1</span></div>
+            <div>Score: <span id="score">0</span></div>
+            <div>Lives: <span id="lives"></span></div>
+            <div>Progress: <span id="avoided">Hit all non-explosive sides</span></div>
+        </div>
+        <div id="controls">
+            ← → or A/D: Rotate | L: Leaderboard
+        </div>
+        <div id="gameOver">
+            <div id="gameOverText"></div>
+            <button onclick="replayGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <div id="splashScreen">
+        <h1>POLYGON BOUNCE</h1>
+        <p>AVOID THE RED SIDES!</p>
+        <input type="text" id="username" placeholder="Enter your name" maxlength="20" style="
+            font-family: 'Press Start 2P', cursive;
+            background: #222;
+            border: 3px solid #fff;
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        ">
+        <button onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="leaderboard">
+        <button class="close-btn" onclick="closeLeaderboard()">X</button>
+        <h2>LEADERBOARD</h2>
+        <table id="leaderboardTable">
+            <thead>
+                <tr>
+                    <th>RANK</th>
+                    <th>NAME</th>
+                    <th>SCORE</th>
+                    <th>LEVEL</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>
